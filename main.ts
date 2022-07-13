@@ -1,4 +1,4 @@
-import { App, Editor, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting } from 'obsidian';
+import {App, Editor, getAllTags, MarkdownView, Modal, Notice, Plugin, PluginSettingTab, Setting, TFile} from 'obsidian';
 
 // Remember to rename these classes and interfaces!
 
@@ -13,6 +13,23 @@ const DEFAULT_SETTINGS: MyPluginSettings = {
 export default class MyPlugin extends Plugin {
 	settings: MyPluginSettings;
 
+	printAllFilenamesWithTag(tag : string) : void {
+		const cache = this.app.metadataCache;
+		const files = this.app.vault.getMarkdownFiles();
+		const filesWithTag = [] as TFile [];
+		files.forEach( (file) => {
+			const cachedFile = cache.getFileCache(file);
+			if (cachedFile == null)
+				return;
+
+			const tags = getAllTags(cachedFile);
+			if (tags != null && tags.includes(tag)) {
+				filesWithTag.push(file);
+			}
+		});
+		console.log("Files with the tag " + tag + ": ", filesWithTag);
+	}
+
 	async onload() {
 		await this.loadSettings();
 
@@ -26,7 +43,7 @@ export default class MyPlugin extends Plugin {
 
 		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
 		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
+		statusBarItemEl.setText(this.settings.mySetting);
 
 		// This adds a simple command that can be triggered anywhere
 		this.addCommand({
@@ -34,6 +51,7 @@ export default class MyPlugin extends Plugin {
 			name: 'Open sample modal (simple)',
 			callback: () => {
 				new SampleModal(this.app).open();
+				this.printAllFilenamesWithTag("#todo/important-urgent");
 			}
 		});
 		// This adds an editor command that can perform some operation on the current editor instance
